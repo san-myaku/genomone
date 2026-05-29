@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <meta name="theme-color" content="#ffd9a8" />
+  <title>ゲノモン — ガチ育種選抜たまごっち</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧬</text></svg>" />
+</head>
+<body>
+  <!-- ヘッダー -->
+  <header class="topbar">
+    <div class="brand">
+      <span class="logo">🧬</span>
+      <div class="brand-txt">
+        <h1>ゲノモン</h1>
+        <p class="tagline">ガチ育種選抜たまごっち</p>
+      </div>
+    </div>
+    <div class="hud">
+      <div class="hud-item"><span class="hud-label">世代</span><span id="hud-gen" class="hud-val">1</span></div>
+      <div class="hud-item"><span class="hud-label">最高評価</span><span id="hud-best" class="hud-val">0</span></div>
+      <div class="hud-item"><span class="hud-label">飼育枠</span><span id="hud-slots" class="hud-val">0/8</span></div>
+      <div class="hud-item"><span class="hud-label">図鑑</span><span id="hud-dex" class="hud-val">0</span></div>
+    </div>
+    <nav class="topnav">
+      <button id="btn-dex"  class="navbtn" title="ずかん">📖</button>
+      <button id="btn-hall" class="navbtn" title="でんどう">🏆</button>
+      <button id="btn-ach"  class="navbtn" title="じっせき">🎖️</button>
+      <button id="btn-sound" class="navbtn" title="サウンド">🔊</button>
+      <button id="btn-help" class="navbtn" title="あそびかた">❓</button>
+      <button id="btn-reset" class="navbtn danger-btn" title="リセット">↺</button>
+    </nav>
+  </header>
+
+  <main class="layout">
+    <!-- ヒーロー: 生息地 -->
+    <section class="panel hero">
+      <div id="habitat" class="habitat">
+        <div class="habitat-sky"></div>
+        <div class="habitat-ground"></div>
+        <div class="habitat-deco">
+          <span class="deco d1">🌼</span><span class="deco d2">🌱</span>
+          <span class="deco d3">🍃</span><span class="deco d4">🌷</span>
+        </div>
+        <div id="habitat-art" class="habitat-art"></div>
+        <div id="habitat-particles" class="particles"></div>
+        <div id="hero-badges" class="hero-badges"></div>
+      </div>
+
+      <div id="hero-info" class="hero-info">
+        <div class="hero-namerow">
+          <span id="hero-name" class="hero-name">—</span>
+          <span id="hero-sex" class="sex"></span>
+          <button id="btn-rename" class="tiny-ghost" title="なまえをかえる">✏️</button>
+        </div>
+        <div id="hero-tags" class="hero-tags"></div>
+        <div id="hero-pheno" class="hero-pheno"></div>
+        <div id="hero-rating" class="hero-rating"></div>
+      </div>
+
+      <div id="care" class="care"></div>
+
+      <div id="actions" class="actions"></div>
+
+      <div id="stats" class="stats"></div>
+
+      <div id="train" class="train-row"></div>
+
+      <div id="hero-actions" class="hero-actions"></div>
+    </section>
+
+    <!-- サイド -->
+    <aside class="side">
+      <section class="panel">
+        <div class="panel-head"><h2>🏡 ぼくじょう</h2><span class="panel-sub">タップで選択</span></div>
+        <div id="roster" class="roster"></div>
+      </section>
+
+      <section class="panel panel-breed">
+        <div class="panel-head"><h2>💞 こうはい</h2><span class="panel-sub">♀×♂ で タマゴ</span></div>
+        <div class="breed-pair">
+          <div id="breed-mom" class="breed-slot f"><div class="breed-port">＋</div><div class="breed-nm">♀ 未選択</div></div>
+          <div class="breed-heart">💗</div>
+          <div id="breed-dad" class="breed-slot m"><div class="breed-port">＋</div><div class="breed-nm">♂ 未選択</div></div>
+        </div>
+        <div id="breed-info" class="breed-coef"></div>
+        <div class="breed-btns">
+          <button id="btn-breed" class="primary">🥚 タマゴをつくる</button>
+          <button id="btn-clear-breed" class="ghost">クリア</button>
+        </div>
+      </section>
+
+      <section class="panel panel-log">
+        <div class="panel-head"><h2>📜 ログ</h2></div>
+        <div id="log" class="log"></div>
+      </section>
+    </aside>
+  </main>
+
+  <!-- トースト -->
+  <div id="toasts" class="toasts"></div>
+
+  <!-- 汎用モーダル -->
+  <div id="modal" class="modal">
+    <div class="modal-box">
+      <button class="modal-close">✕</button>
+      <div id="modal-body"></div>
+    </div>
+  </div>
+
+  <footer class="foot">GENOMONE — 遺伝 × 育成 × 選抜のミニ育種シミュレーター</footer>
+
+  <script src="genetics.js"></script>
+  <script src="creature.js"></script>
+  <script src="audio.js"></script>
+  <script src="game.js"></script>
+</body>
+</html>
