@@ -2,88 +2,119 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <meta name="theme-color" content="#ffd9a8" />
   <title>ゲノモン — ガチ育種選抜たまごっち</title>
   <link rel="stylesheet" href="style.css" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧬</text></svg>" />
 </head>
 <body>
+  <!-- ヘッダー -->
   <header class="topbar">
     <div class="brand">
       <span class="logo">🧬</span>
-      <div>
-        <h1>ゲノモン<small>GENOMONE</small></h1>
+      <div class="brand-txt">
+        <h1>ゲノモン</h1>
         <p class="tagline">ガチ育種選抜たまごっち</p>
       </div>
     </div>
     <div class="hud">
-      <div class="hud-item"><span class="hud-label">最大世代</span><span id="stat-gen" class="hud-val">1</span></div>
-      <div class="hud-item"><span class="hud-label">歴代最高評価</span><span id="stat-best" class="hud-val">0</span></div>
-      <div class="hud-item"><span class="hud-label">飼育枠</span><span id="stat-slots" class="hud-val">0/8</span></div>
+      <div class="hud-item"><span class="hud-label">世代</span><span id="hud-gen" class="hud-val">1</span></div>
+      <div class="hud-item"><span class="hud-label">最高評価</span><span id="hud-best" class="hud-val">0</span></div>
+      <div class="hud-item"><span class="hud-label">飼育枠</span><span id="hud-slots" class="hud-val">0/8</span></div>
+      <div class="hud-item"><span class="hud-label">図鑑</span><span id="hud-dex" class="hud-val">0</span></div>
     </div>
-    <div class="topbtns">
-      <button id="btn-help" class="ghost">遊び方</button>
-      <button id="btn-reset" class="ghost">リセット</button>
-    </div>
+    <nav class="topnav">
+      <button id="btn-dex"  class="navbtn" title="ずかん">📖</button>
+      <button id="btn-hall" class="navbtn" title="でんどう">🏆</button>
+      <button id="btn-ach"  class="navbtn" title="じっせき">🎖️</button>
+      <button id="btn-sound" class="navbtn" title="サウンド">🔊</button>
+      <button id="btn-help" class="navbtn" title="あそびかた">❓</button>
+      <button id="btn-reset" class="navbtn danger-btn" title="リセット">↺</button>
+    </nav>
   </header>
 
   <main class="layout">
-    <!-- 選択中の個体 -->
-    <section class="panel panel-selected">
-      <h2>飼育中の個体</h2>
-      <div id="selected"></div>
+    <!-- ヒーロー: 生息地 -->
+    <section class="panel hero">
+      <div id="habitat" class="habitat">
+        <div class="habitat-sky"></div>
+        <div class="habitat-ground"></div>
+        <div class="habitat-deco">
+          <span class="deco d1">🌼</span><span class="deco d2">🌱</span>
+          <span class="deco d3">🍃</span><span class="deco d4">🌷</span>
+        </div>
+        <div id="habitat-art" class="habitat-art"></div>
+        <div id="habitat-particles" class="particles"></div>
+        <div id="hero-badges" class="hero-badges"></div>
+      </div>
+
+      <div id="hero-info" class="hero-info">
+        <div class="hero-namerow">
+          <span id="hero-name" class="hero-name">—</span>
+          <span id="hero-sex" class="sex"></span>
+          <button id="btn-rename" class="tiny-ghost" title="なまえをかえる">✏️</button>
+        </div>
+        <div id="hero-tags" class="hero-tags"></div>
+        <div id="hero-pheno" class="hero-pheno"></div>
+        <div id="hero-rating" class="hero-rating"></div>
+      </div>
+
+      <div id="care" class="care"></div>
+
+      <div id="actions" class="actions"></div>
+
+      <div id="stats" class="stats"></div>
+
+      <div id="train" class="train-row"></div>
+
+      <div id="hero-actions" class="hero-actions"></div>
     </section>
 
-    <!-- 右カラム -->
+    <!-- サイド -->
     <aside class="side">
       <section class="panel">
-        <h2>飼育枠（クリックで選択）</h2>
+        <div class="panel-head"><h2>🏡 ぼくじょう</h2><span class="panel-sub">タップで選択</span></div>
         <div id="roster" class="roster"></div>
       </section>
 
       <section class="panel panel-breed">
-        <h2>🧬 交配（選抜交配）</h2>
+        <div class="panel-head"><h2>💞 こうはい</h2><span class="panel-sub">♀×♂ で タマゴ</span></div>
         <div class="breed-pair">
-          <span id="breed-mom" class="breed-chip f">♀ 未選択</span>
-          <span class="breed-x">×</span>
-          <span id="breed-dad" class="breed-chip m">♂ 未選択</span>
+          <div id="breed-mom" class="breed-slot f"><div class="breed-port">＋</div><div class="breed-nm">♀ 未選択</div></div>
+          <div class="breed-heart">💗</div>
+          <div id="breed-dad" class="breed-slot m"><div class="breed-port">＋</div><div class="breed-nm">♂ 未選択</div></div>
         </div>
         <div id="breed-info" class="breed-coef"></div>
         <div class="breed-btns">
-          <button id="btn-breed" class="primary">タマゴを作る</button>
-          <button id="btn-clear-breed" class="ghost">選択解除</button>
+          <button id="btn-breed" class="primary">🥚 タマゴをつくる</button>
+          <button id="btn-clear-breed" class="ghost">クリア</button>
         </div>
-        <p class="hint">個体を選んで「交配に選択」→ ♀♂が揃ったらタマゴを作成。成体/ろうれいのみ。</p>
       </section>
 
       <section class="panel panel-log">
-        <h2>ログ</h2>
+        <div class="panel-head"><h2>📜 ログ</h2></div>
         <div id="log" class="log"></div>
       </section>
     </aside>
   </main>
 
-  <!-- 遊び方モーダル -->
-  <div id="help" class="help">
-    <div class="help-box">
-      <button class="help-close">✕</button>
-      <h2>🧬 ゲノモンの遊び方</h2>
-      <h3>1. 世話する（たまごっち）</h3>
-      <p>タマゴは時間で孵化。<b>ごはん・あそぶ・そうじ・やすむ・くすり</b>で「まんぷく/きげん/せいけつ/けんこう」を維持。放置すると病気で死ぬ。幼少期の世話の質が、成体時の能力ボーナスと寿命を左右する。</p>
-      <h3>2. 育種する（選抜交配）</h3>
-      <p>成体の♀×♂を交配するとタマゴが生まれる。能力は<b>複数の遺伝子の足し算（ポリジーン）</b>、見た目は<b>メンデル遺伝</b>で子に伝わる。減数分裂時に低確率で<b>突然変異</b>も起こり、世代を超えて能力が伸びる余地が生まれる。</p>
-      <h3>3. 選抜する（ガチ要素）</h3>
-      <p>飼育枠は<b>8体まで</b>。優秀な個体を残し、劣る個体は「にがす」。これが選抜圧。</p>
-      <h3>★ 最重要：見える強さ ≠ 遺伝能力</h3>
-      <p>表示される能力は <b>表現型 P = 遺伝G + 環境E + 育成補正 + トレーニング</b>。
-      子に伝わるのは <b>遺伝G だけ</b>。トレーニングや好環境で見かけ上強い個体を選んでも、子は伸びない。
-      <b>🔬DNA解析</b>で真の育種価(G)を確認し、Gの高い個体を選抜するのが攻略の鍵。近親交配は係数が上がると弱い子が生まれやすい（近交弱勢）。</p>
-      <p class="hint">※1ゲーム日=実時間2分。データは自動セーブ、閉じても育つ（放置上限あり）。</p>
+  <!-- トースト -->
+  <div id="toasts" class="toasts"></div>
+
+  <!-- 汎用モーダル -->
+  <div id="modal" class="modal">
+    <div class="modal-box">
+      <button class="modal-close">✕</button>
+      <div id="modal-body"></div>
     </div>
   </div>
 
-  <footer class="foot">GENOMONE — 遺伝×育成×選抜のミニ育種シミュレーター</footer>
+  <footer class="foot">GENOMONE — 遺伝 × 育成 × 選抜のミニ育種シミュレーター</footer>
 
   <script src="genetics.js"></script>
+  <script src="creature.js"></script>
+  <script src="audio.js"></script>
   <script src="game.js"></script>
 </body>
 </html>

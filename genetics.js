@@ -1,16 +1,15 @@
 /* ============================================================================
  * GENOMONE - 遺伝エンジン (genetics.js)
  *
- * ガチ育種ゲームの心臓部。ゲノモンは二倍体(diploid)の生き物で、
+ * ゲノモンは二倍体(diploid)の生き物。
  *   - 量的形質(QTL): 複数遺伝子座の相加効果で能力値が決まる（ポリジーン）
- *   - 質的形質: メンデル遺伝（優性・不完全優性）で見た目が決まる
- * を持つ。配偶子形成(減数分裂)では各座位からランダムに1アレルを選び、
- * 低確率で突然変異(mutation)が起こる。
+ *   - 質的形質: メンデル遺伝（優性順位・不完全優性）で見た目が決まる
+ *       体色 / 模様(しま・水玉・無地) / ツノ / 目の形 / 体型 / ✨シャイニー
+ * 配偶子形成(減数分裂)では各座位からランダムに1アレルを選び、低確率で突然変異。
  *
- * 重要な設計思想（ガチ要素）:
+ * ★設計思想（ガチ要素）:
  *   表現型 P = 遺伝的能力 G + 環境偏差 E + 育成補正 + トレーニング
- *   プレイヤーが見えるのは P。だが子に伝わるのは G(遺伝子)だけ。
- *   → 見た目の強さに釣られず「真の遺伝能力」を見抜く選抜眼が問われる。
+ *   見えるのは P。子に伝わるのは G(遺伝子)だけ。選抜眼が問われる。
  * ========================================================================== */
 
 const GN = (() => {
@@ -24,53 +23,70 @@ const GN = (() => {
     guts: 'こんじょう', size: 'たいかく',
   };
 
-  const LOCI_PER_TRAIT = 5;   // 1形質あたりの遺伝子座数
-  const ALLELE_MAX = 4;       // アレル値 0..4（座位あたり最大8 → 形質最大40）
+  const LOCI_PER_TRAIT = 5;
+  const ALLELE_MAX = 4;
   const TRAIT_MAX_SUM = LOCI_PER_TRAIT * 2 * ALLELE_MAX; // 40
 
-  const COLOR_ALLELES = ['R', 'B', 'G', 'Y']; // あか・あお・みどり・きいろ
-  const COLOR_RANK = { R: 4, B: 3, G: 2, Y: 1 }; // 優性順位（高いほど優性）
-  const COLOR_NAME = { R: 'あか', B: 'あお', G: 'みどり', Y: 'きいろ' };
-  const COLOR_HEX  = { R: '#ff5d6c', B: '#4d8bff', G: '#3fcf8e', Y: '#ffd23f' };
+  // 体色（優性順位制）
+  const COLOR_ALLELES = ['R', 'B', 'G', 'Y', 'P', 'C']; // 赤青緑黄 桃 水
+  const COLOR_RANK = { R: 6, B: 5, G: 4, Y: 3, P: 2, C: 1 };
+  const COLOR_NAME = { R: 'もも赤', B: 'そら青', G: 'わか緑', Y: 'たまご黄', P: 'ゆめ桃', C: 'みず色' };
+  const COLOR_HEX  = { R: '#ff7a8a', B: '#5aa9ff', G: '#4ed99a', Y: '#ffd84d', P: '#ff9ad5', C: '#73e0d8' };
+
+  // 模様（優性順位: しま > 水玉 > 無地）
+  const PAT_ALLELES = ['T', 'D', 'p'];
+  const PAT_RANK = { T: 3, D: 2, p: 1 };
+  const PAT_NAME = { T: 'しま', D: 'みずたま', p: 'むじ' };
+
+  // 目の形（優性順位）
+  const EYE_ALLELES = ['O', 'S', 'L', 'U'];
+  const EYE_RANK = { O: 4, S: 3, L: 2, U: 1 };
+  const EYE_NAME = { O: 'まんまる', S: 'きらきら', L: 'たれめ', U: 'ねむそう' };
+
+  // 体型（優性順位: まる > のっぽ > ずんぐり）
+  const SHAPE_ALLELES = ['r', 't', 'w'];
+  const SHAPE_RANK = { r: 3, t: 2, w: 1 };
+  const SHAPE_NAME = { r: 'まるがた', t: 'のっぽがた', w: 'ずんぐりがた' };
 
   // 突然変異率
-  const MUT_QUANT = 0.018;  // 量的アレルが±1する確率/アレル
-  const MUT_COLOR = 0.010;  // 体色アレルが別色に変わる確率
-  const MUT_MENDEL = 0.012; // 模様・ツノアレルが反転する確率
+  const MUT_QUANT = 0.018;   // 量的アレル ±1
+  const MUT_COLOR = 0.012;   // 体色
+  const MUT_MENDEL = 0.012;  // 模様・ツノ・目・体型
+  const MUT_SHINY = 0.006;   // ✨シャイニー(レア)出現
 
   // ---- ユーティリティ -----------------------------------------------------
   const rnd = () => Math.random();
   const randint = (a, b) => a + Math.floor(rnd() * (b - a + 1));
   const choice = (arr) => arr[Math.floor(rnd() * arr.length)];
   const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
-  // おおよそ正規分布（Box-Muller）
   function gauss(mean = 0, sd = 1) {
     let u = 0, v = 0;
     while (u === 0) u = rnd();
     while (v === 0) v = rnd();
     return mean + sd * Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
   }
+  const topAllele = (pair, rank) => (rank[pair[0]] >= rank[pair[1]] ? pair[0] : pair[1]);
 
-  // ---- ゲノム生成 ---------------------------------------------------------
-  // 創始個体(founder)のゲノム。能力アレルは低め(0..2)に寄せ、
-  // 育てる余地（伸びしろ）を残す。
+  // ---- 創始ゲノム ---------------------------------------------------------
   function founderGenome() {
     const q = {};
     for (const t of QUANT_TRAITS) {
       q[t] = [];
-      for (let i = 0; i < LOCI_PER_TRAIT; i++) {
-        q[t].push([randint(0, 2), randint(0, 2)]);
-      }
+      for (let i = 0; i < LOCI_PER_TRAIT; i++) q[t].push([randint(0, 2), randint(0, 2)]);
     }
     return {
       q,
-      color: [choice(COLOR_ALLELES), choice(COLOR_ALLELES)],
-      pattern: [choice(['S', 's']), choice(['S', 's'])], // S=しま(優性)
-      horn: [choice(['H', 'h']), choice(['H', 'h'])],     // 不完全優性
+      color:   [choice(COLOR_ALLELES), choice(COLOR_ALLELES)],
+      pattern: [choice(PAT_ALLELES), choice(PAT_ALLELES)],
+      horn:    [choice(['H', 'h']), choice(['H', 'h'])], // 不完全優性
+      eye:     [choice(EYE_ALLELES), choice(EYE_ALLELES)],
+      shape:   [choice(SHAPE_ALLELES), choice(SHAPE_ALLELES)],
+      special: ['n', 'n'], // 'X'=シャイニー（突然変異でのみ出現）
     };
   }
 
-  // ---- 減数分裂（配偶子形成）+ 突然変異 -----------------------------------
+  // ---- 減数分裂 + 突然変異 ------------------------------------------------
+  function pick(pair) { return pair[Math.floor(rnd() * 2)]; }
   function makeGamete(genome) {
     const q = {};
     for (const t of QUANT_TRAITS) {
@@ -80,67 +96,69 @@ const GN = (() => {
         return a;
       });
     }
-    let color = genome.color[Math.floor(rnd() * 2)];
+    let color = pick(genome.color);
     if (rnd() < MUT_COLOR) color = choice(COLOR_ALLELES);
-
-    let pattern = genome.pattern[Math.floor(rnd() * 2)];
-    if (rnd() < MUT_MENDEL) pattern = pattern === 'S' ? 's' : 'S';
-
-    let horn = genome.horn[Math.floor(rnd() * 2)];
+    let pattern = pick(genome.pattern);
+    if (rnd() < MUT_MENDEL) pattern = choice(PAT_ALLELES);
+    let horn = pick(genome.horn);
     if (rnd() < MUT_MENDEL) horn = horn === 'H' ? 'h' : 'H';
-
-    return { q, color, pattern, horn };
+    let eye = pick(genome.eye);
+    if (rnd() < MUT_MENDEL) eye = choice(EYE_ALLELES);
+    let shape = pick(genome.shape);
+    if (rnd() < MUT_MENDEL) shape = choice(SHAPE_ALLELES);
+    let special = pick(genome.special || ['n', 'n']);
+    if (special === 'n' && rnd() < MUT_SHINY) special = 'X';
+    return { q, color, pattern, horn, eye, shape, special };
   }
 
-  // ---- 受精（2配偶子 → 新ゲノム） -----------------------------------------
+  // ---- 受精 ---------------------------------------------------------------
   function fertilize(g1, g2) {
     const q = {};
-    for (const t of QUANT_TRAITS) {
-      q[t] = g1.q[t].map((a, i) => [a, g2.q[t][i]]);
-    }
+    for (const t of QUANT_TRAITS) q[t] = g1.q[t].map((a, i) => [a, g2.q[t][i]]);
     return {
       q,
-      color: [g1.color, g2.color],
+      color:   [g1.color, g2.color],
       pattern: [g1.pattern, g2.pattern],
-      horn: [g1.horn, g2.horn],
+      horn:    [g1.horn, g2.horn],
+      eye:     [g1.eye, g2.eye],
+      shape:   [g1.shape, g2.shape],
+      special: [g1.special, g2.special],
     };
   }
 
-  // ---- 真の遺伝的能力 G (0..100) ------------------------------------------
-  // 育種価そのもの。プレイヤーには直接見えない。
+  // ---- 真の遺伝的能力 G (0..100) -----------------------------------------
   function breedingValue(genome, trait) {
     const sum = genome.q[trait].reduce((s, l) => s + l[0] + l[1], 0);
     return Math.round((sum / TRAIT_MAX_SUM) * 100);
   }
 
-  // ---- 表現型(見た目) -----------------------------------------------------
+  // ---- 表現型 -------------------------------------------------------------
   function phenotype(genome) {
-    // 体色: 最も優性順位の高いアレル
-    const cTop = genome.color[0];
-    const cBot = genome.color[1];
-    const colorAllele = COLOR_RANK[cTop] >= COLOR_RANK[cBot] ? cTop : cBot;
-
-    // 模様: S が1つでもあればしま
-    const striped = genome.pattern.includes('S');
-
-    // ツノ: H の本数で不完全優性
-    const hornCount = genome.horn.filter((a) => a === 'H').length;
-    const horn = hornCount; // 0=なし,1=小,2=大
-
+    const g = genome;
+    const ca = topAllele(g.color, COLOR_RANK);
+    const pa = topAllele(g.pattern, PAT_RANK);
+    const ea = topAllele(g.eye || ['O', 'O'], EYE_RANK);
+    const sa = topAllele(g.shape || ['r', 'r'], SHAPE_RANK);
+    const hornCount = (g.horn || ['h', 'h']).filter((a) => a === 'H').length;
+    const shiny = (g.special || ['n', 'n']).includes('X');
     return {
-      colorAllele,
-      colorName: COLOR_NAME[colorAllele],
-      colorHex: COLOR_HEX[colorAllele],
-      striped,
-      horn,
-      // 純系判定（同じアレルのホモ接合か）
-      colorHomo: cTop === cBot,
+      colorAllele: ca, colorName: COLOR_NAME[ca], colorHex: COLOR_HEX[ca],
+      colorHomo: g.color[0] === g.color[1],
+      pattern: pa, patternName: PAT_NAME[pa],
+      eye: ea, eyeName: EYE_NAME[ea],
+      shape: sa, shapeName: SHAPE_NAME[sa],
+      horn: hornCount,
+      shiny,
     };
   }
 
-  // ---- 近交係数の近似 -----------------------------------------------------
-  // 各個体は祖先IDセット(自分を含まない、最大数代)を持つ。
-  // 母と父が共有する祖先の割合からインブリードの強さを出す。
+  // 図鑑キー（見た目の組み合わせ）
+  function dexKey(genome) {
+    const p = phenotype(genome);
+    return [p.colorAllele, p.pattern, p.eye, p.shape, p.horn, p.shiny ? 'X' : 'n'].join('-');
+  }
+
+  // ---- 近交係数 -----------------------------------------------------------
   function inbreedingCoef(momAnc, momId, dadAnc, dadId) {
     const A = new Set([...(momAnc || []), momId]);
     const B = new Set([...(dadAnc || []), dadId]);
@@ -149,8 +167,6 @@ const GN = (() => {
     const denom = Math.max(A.size, B.size);
     return denom ? shared / denom : 0;
   }
-
-  // 子の祖先セットを構築（直近3世代ぶん程度に制限）
   function buildAncestors(momAnc, momId, dadAnc, dadId, cap = 14) {
     const set = [];
     const push = (id) => { if (id != null && !set.includes(id)) set.push(id); };
@@ -161,11 +177,12 @@ const GN = (() => {
   }
 
   return {
-    BATTLE_STATS, QUANT_TRAITS, STAT_LABEL, COLOR_NAME, COLOR_HEX,
+    BATTLE_STATS, QUANT_TRAITS, STAT_LABEL,
+    COLOR_NAME, COLOR_HEX, PAT_NAME, EYE_NAME, SHAPE_NAME,
     LOCI_PER_TRAIT, ALLELE_MAX, TRAIT_MAX_SUM,
     rnd, randint, choice, clamp, gauss,
     founderGenome, makeGamete, fertilize,
-    breedingValue, phenotype, inbreedingCoef, buildAncestors,
+    breedingValue, phenotype, dexKey, inbreedingCoef, buildAncestors,
   };
 })();
 
