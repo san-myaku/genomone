@@ -15,10 +15,15 @@ export interface Phenotype {
   patternColor: string;
   earType: string;
   eyeType: string;
+  pupilType: string;
   eyeColor: string;
+  sclera: string;
+  lashType: string;
+  eyeMark: string;
   mouthType: string;
   cheekType: string;
   tailType: string;
+  limbType: string;
   hornType: string;
   wingType: string;
   aura: string;
@@ -26,6 +31,7 @@ export interface Phenotype {
   size: number;
   plump: number;
   eyeSize: number;
+  eyeSpacing: number;
   shade: number;
 }
 
@@ -125,11 +131,14 @@ const RARITY_POINTS: Record<string, number> = {
   hornType: 15,
   bodyShape: 16,
   eyeType: 15,
+  pupilType: 14,
   pattern: 13,
   baseColor: 12,
   eyeColor: 11,
+  sclera: 11,
   tailType: 11,
   cheekType: 9,
+  eyeMark: 9,
   earType: 8,
   mouthType: 7,
   temperament: 6,
